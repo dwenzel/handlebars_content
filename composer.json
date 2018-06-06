@@ -1,0 +1,19 @@
+{
+    "name": "dwenzel/handlebars-content",
+    "description": "Provides a content object for the TYPO3 CMS, which can be rendered using handlebars templates.",
+    "type": "typo3-cms-extension",
+    "version": "1.0.0",
+    "license": "GPL-2.0+",
+    "preferred-install": "dist",
+    "autoload": {
+        "psr-4": {
+            "dwenzel\\HandlebarsContent\\": "Classes/"
+        }
+    },
+    "suggest": {
+    },
+    "require": {
+        "php": "^7.0",
+        "JFB/Handlebars": "dev-master"
+    }
+}
