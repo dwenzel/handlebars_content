@@ -16,17 +16,23 @@ namespace DWenzel\HandlebarsContent\ContentObject;
  * The TYPO3 project - inspiring people to share!
  */
 
+use DWenzel\HandlebarsContent\View\StandaloneView;
+use TYPO3\CMS\Core\TypoScript\TypoScriptService;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\ContentObject\AbstractContentObject;
-use JFB\Handlebars\View\HandlebarsView;
 use TYPO3\CMS\Frontend\ContentObject\ContentDataProcessor;
 use TYPO3\CMS\Frontend\ContentObject\ContentObjectRenderer;
 
+/**
+ * Class HandlebarsContentObject
+ * Renders a content object using handlebars templates
+ */
 class HandlebarsContentObject extends AbstractContentObject
 {
+    const VARIABLES_KEY = 'variables';
 
     /**
-     * @var HandlebarsView
+     * @var StandaloneView
      */
     protected $view = null;
 
@@ -36,12 +42,23 @@ class HandlebarsContentObject extends AbstractContentObject
     protected $contentDataProcessor;
 
     /**
+     * @var TypoScriptService
+     */
+    protected $typoScriptService;
+
+    /**
+     * @var array
+     */
+    protected $settings = [];
+
+    /**
      * @param ContentObjectRenderer $cObj
      */
     public function __construct(ContentObjectRenderer $cObj)
     {
         parent::__construct($cObj);
         $this->contentDataProcessor = GeneralUtility::makeInstance(ContentDataProcessor::class);
+        $this->typoScriptService = GeneralUtility::makeInstance(TypoScriptService::class);
     }
 
     /**
@@ -72,16 +89,30 @@ class HandlebarsContentObject extends AbstractContentObject
 
     public function render($conf = [])
     {
-        $this->initializeViewInstance();
         if (!is_array($conf)) {
             $conf = [];
         }
+        $settings = $this->typoScriptService->convertTypoScriptArrayToPlainArray($conf);
+        $variables = [];
+
+        if (isset($settings[static::VARIABLES_KEY])) {
+            $variables = $settings[static::VARIABLES_KEY];
+            unset($settings[static::VARIABLES_KEY]);
+        }
+        $variables['data'] = $this->cObj->data;
+        $variables = $this->contentDataProcessor->process($this->cObj, $conf, $variables);
+        $this->settings = $settings;
+        $this->initializeViewInstance();
+
+        $this->view->assignMultiple(
+            $this->typoScriptService->convertTypoScriptArrayToPlainArray($variables)
+        );
 
         return $this->view->render();
     }
 
     protected function initializeViewInstance()
     {
-        $this->view = GeneralUtility::makeInstance(HandlebarsView::class);
+        $this->view = GeneralUtility::makeInstance(StandaloneView::class, $this->settings);
     }
 }
